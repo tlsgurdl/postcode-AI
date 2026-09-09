@@ -9,43 +9,50 @@ import uuid
 from io import BytesIO
 
 # ==========================================
-# ⚙️ 1. API 키 세팅 
+# ⚙️ 1. API 키 세팅 (이사님 환경에 맞게 기입)
 # ==========================================
-NCP_CLIENT_ID = "d9sim98wio"
-NCP_CLIENT_SECRET = "NJX9IonEkf4QpwdElne0pmsQgbn4BVdLNhE5lflh"
+# [우편번호 검색용] 카카오 REST API 키 (여기에 카카오 키를 넣으세요!)
+KAKAO_REST_API_KEY = "6e8d0ef74f5ae0a2f74769058235b074"
 
+# [사진 인식용] 네이버 CLOVA OCR 키 (기존에 발급받으신 키를 그대로 넣으세요!)
 OCR_SECRET_KEY = "cnltdEtBb1d5aWFubEhhV0pHc3VqSGJWRVhwU0JKTGk="
 OCR_INVOKE_URL = "https://mnq7p7qzj1.apigw.ntruss.com/custom/v1/57843/fd754354ae24c0225b0f571c6ea4457f452f953a0150b27a80f69a3e98d13a77/general"
 
 # ==========================================
 # 🧠 2. 100% 무인화 핵심 엔진
 # ==========================================
-def get_naver_zipcode(address):
-    """네이버 Geocoding API로 우편번호 검색 (401 에러 방어 포함)"""
-    url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
-    headers = {
-        "X-NCP-APIGW-API-KEY-ID": NCP_CLIENT_ID,
-        "X-NCP-APIGW-API-KEY": NCP_CLIENT_SECRET
-    }
+def get_kakao_zipcode(address):
+    """카카오 로컬 API로 우편번호 검색 (URL 등록 필요 없음!)"""
+    url = "https://dapi.kakao.com/v2/local/search/address.json"
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
     params = {"query": address}
+    
     try:
         response = requests.get(url, headers=headers, params=params, timeout=5)
         response.raise_for_status()
         result = response.json()
-        if result.get('addresses') and len(result['addresses']) > 0:
-            return result['addresses'][0].get('postalCode', "[우편번호 누락]")
+        
+        if result['documents']:
+            doc = result['documents'][0]
+            # 도로명 주소가 우선, 없으면 지번 주소의 우편번호 추출
+            if doc.get('road_address') and doc['road_address'].get('zone_no'):
+                return doc['road_address']['zone_no']
+            elif doc.get('address') and doc['address'].get('zip_code'):
+                return doc['address']['zip_code']
+            else:
+                return "[우편번호 누락]"
         else:
             return "[검색실패: 없는주소]"
+            
     except requests.exceptions.HTTPError as e:
-        # 401 에러 발생 시 실무자가 직관적으로 원인을 알 수 있도록 표시
         if e.response.status_code == 401:
-            return "[API 401오류: Geocoding 서비스 신청 및 키 확인 요망]"
+            return "[API 401오류: 카카오 키 확인 요망]"
         return f"[API오류: {e.response.status_code}]"
     except Exception as e:
         return "[시스템오류]"
 
 def extract_text_via_ocr(image_bytes):
-    """수기 송장 사진 OCR 판독"""
+    """수기 송장 사진 OCR 판독 (네이버 CLOVA)"""
     if not OCR_SECRET_KEY or "여기에" in OCR_SECRET_KEY:
         return "[오류: OCR API 키가 세팅되지 않았습니다.]"
         
@@ -82,37 +89,32 @@ def parse_smart_order_line(line):
         phone = match.group(1).strip()
         name = line[:match.start()].strip()
         
-        # 전화번호 뒷부분(주소+상품명 후보) 추출 후 앞쪽에 잘못 붙은 특수기호 청소
         rest = line[match.end():].strip()
         rest = re.sub(r'^[/,-]\s*', '', rest) 
         
-        # 상품명이 없을 수도 있다는 엣지 케이스 방어
-        # 뒤에서부터 검색하여 마지막 슬래시(/)를 기준으로 주소와 상품명을 분리
         if '/' in rest:
             parts = rest.rsplit('/', 1)
             address = parts[0].strip()
             product = parts[1].strip()
         else:
-            # 슬래시가 아예 없으면 전부 '주소'로 몰아넣어 주소 잘림 및 오배송 원천 차단
             address = rest
             product = ""
             
         return {"받는사람": name, "전화번호": phone, "주소": address, "상품명": product}
     
-    # 전화번호가 없으면 엑셀 데이터 누락을 막기 위해 전체를 주소 칸에 임시 보관
     return {"받는사람": "[확인요망]", "전화번호": "", "주소": line, "상품명": ""}
 
 # ==========================================
 # 🖥️ 3. 웹사이트 UI 화면
 # ==========================================
-st.set_page_config(page_title="보람한돈 무인 주문소 V3.1", layout="wide")
-st.title("🐷 보람한돈 100% 무인 주문 접수처 (AI 텍스트 방어 탑재)")
+st.set_page_config(page_title="보람한돈 무인 주문소 V4.0", layout="wide")
+st.title("🐷 보람한돈 100% 무인 주문 접수처 (카카오 우편번호 탑재)")
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("📸 1. 수기 송장 사진 업로드")
-    st.info("명절 특수! 글씨가 적힌 사진을 올리면 AI가 읽어냅니다.")
+    st.info("명절 특수! 악필 송장 사진을 올리면 AI가 완벽히 읽어냅니다.")
     uploaded_files = st.file_uploader("이미지 첨부", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
 
 with col2:
@@ -154,8 +156,8 @@ if st.button("🚀 데이터 통합 및 우편번호 변환 시작!", use_contai
             
             total = len(df)
             for i, addr in enumerate(df['주소']):
-                status_text.text(f"우편번호 찾는 중... ({i+1}/{total})")
-                zipcodes.append(get_naver_zipcode(addr))
+                status_text.text(f"카카오에서 우편번호 찾는 중... ({i+1}/{total})")
+                zipcodes.append(get_kakao_zipcode(addr))
                 time.sleep(0.1) 
                 progress_bar.progress((i + 1) / total)
                 
