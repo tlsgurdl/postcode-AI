@@ -108,7 +108,7 @@ def parse_smart_order_line(line):
 st.set_page_config(page_title="보람한돈 무인 주문소 V3.1", layout="wide")
 st.title("🐷 보람한돈 100% 무인 주문 접수처 (AI 텍스트 방어 탑재)")
 
-password = st.sidebar.text_input("🔒 접속 비밀번호", type="1")
+password = st.sidebar.text_input("🔒 접속 비밀번호", type="password")
 if password != "boram1234!":
     st.warning("사내 비밀번호를 입력해야 가동됩니다.")
     st.stop()
