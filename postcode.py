@@ -8,7 +8,7 @@ from io import BytesIO
 # ==========================================
 # ⚙️ 1. API 키 세팅
 # ==========================================
-# [우편번호] 카카오 REST API 키 (이것만 있으면 평생 무료!)
+# [우편번호] 카카오 REST API 키 
 KAKAO_REST_API_KEY = "6e8d0ef74f5ae0a2f74769058235b074"
 
 # ==========================================
@@ -46,10 +46,10 @@ def parse_smart_order_line(line):
     
     if match:
         raw_phone = match.group(1)
-        phone = re.sub(r'\s+', '', raw_phone) # 전화번호 안의 공백 싹 제거
+        phone = re.sub(r'\s+', '', raw_phone) 
         
         name_part = line[:match.start()].strip()
-        name = re.sub(r'^\d+[\s.]*', '', name_part) # 이름 앞의 순번 깔끔하게 제거
+        name = re.sub(r'^\d+[\s.]*', '', name_part) 
         
         rest = line[match.end():].strip()
         rest = re.sub(r'^[/,-]\s*', '', rest) 
@@ -67,22 +67,23 @@ def parse_smart_order_line(line):
     return {"받는사람": "[확인요망]", "전화번호": "", "주소": line, "상품명": ""}
 
 # ==========================================
-# 🖥️ 3. 웹사이트 UI 화면 (초경량 디자인)
+# 🖥️ 3. 웹사이트 UI 화면 (택배사 다이렉트 업로드)
 # ==========================================
-st.set_page_config(page_title="보람한돈 무인 주문소 V5.0", layout="wide")
-st.title("🐷 보람한돈 100% 무인 주문 접수처 (초경량 텍스트 전용)")
+st.set_page_config(page_title="보람한돈 무인 주문소 V6.0", layout="wide")
+st.title("🐷 보람한돈 100% 무인 주문 접수처 (택배사 직연동)")
 
 st.subheader("📝 카톡/문자 내역 복사 & 붙여넣기")
 st.info("이름 010-1111-2222 주소 (상품명이 있다면 끝에 / 삼겹살 500g)")
-text_input = st.text_area("카톡이나 문자로 받은 주문 내역, 또는 카리나가 정제해준 텍스트를 여기에 붙여넣으세요:", height=300)
+text_input = st.text_area("주문 내역 텍스트를 여기에 붙여넣으세요:", height=300)
 
-if st.button("🚀 데이터 통합 및 우편번호 변환 시작!", use_container_width=True):
+if st.button("🚀 택배사 양식으로 자동 변환 시작!", use_container_width=True):
     if not text_input.strip():
         st.error("⚠️ 주문 텍스트를 먼저 입력해 주세요!")
     else:
-        with st.spinner("로봇이 주소를 분석하여 카카오에서 우편번호를 찾는 중입니다..."):
+        with st.spinner("로봇이 주소를 분석하고 택배사 양식을 조립 중입니다..."):
             parsed_data = []
             
+            # 1. 텍스트 분석
             for line in text_input.strip().split('\n'):
                 parsed = parse_smart_order_line(line)
                 if parsed: parsed_data.append(parsed)
@@ -96,6 +97,7 @@ if st.button("🚀 데이터 통합 및 우편번호 변환 시작!", use_contai
             progress_bar = st.progress(0)
             status_text = st.empty()
             
+            # 2. 카카오 우편번호 검색
             total = len(df)
             for i, addr in enumerate(df['주소']):
                 if len(addr) < 5:
@@ -108,21 +110,40 @@ if st.button("🚀 데이터 통합 및 우편번호 변환 시작!", use_contai
                 
             df['우편번호'] = zipcodes
             
-            cols = ['받는사람', '전화번호', '우편번호', '주소', '상품명']
-            df = df[cols]
+            # 3. 택배시스템 13개 열(Column) 완벽 매칭 (100% 무인화 핵심)
+            final_data = []
+            for i, row in df.iterrows():
+                final_data.append({
+                    '받는사람': row['받는사람'],
+                    '전화번호1': row['전화번호'],
+                    '전화번호2': '',
+                    '주소': row['주소'],
+                    '우편번호': row['우편번호'],
+                    '상품명1': row['상품명'],
+                    '운임': '',
+                    '운임구분': '',
+                    '수량(A타입)': '',
+                    '배송메시지': '',
+                    '보내는사람(지정)': '㈜보람식품',
+                    '전화번호1(지정)': '031-985-0031',
+                    '주소(지정)': '경기도 김포시 장릉로 74(풍무동)'
+                })
             
-            st.success("🎉 완벽하게 변환이 완료되었습니다! 엑셀로 다운로드하세요.")
-            st.dataframe(df)
+            final_df = pd.DataFrame(final_data)
             
+            st.success("🎉 완벽하게 택배사 양식으로 변환되었습니다! 파일을 그대로 업로드하세요.")
+            st.dataframe(final_df)
+            
+            # 엑셀 다운로드
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='택배발송용')
+                final_df.to_excel(writer, index=False, sheet_name='Sheet1')
             processed_data = output.getvalue()
             
             st.download_button(
-                label="📊 택배사 업로드용 엑셀 다운로드",
+                label="📊 [CJ/롯데/로젠 등] 택배시스템 다이렉트 업로드용 파일 다운로드",
                 data=processed_data,
-                file_name="보람한돈_주문취합본.xlsx",
+                file_name="보람한돈_택배발송용_최종.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
