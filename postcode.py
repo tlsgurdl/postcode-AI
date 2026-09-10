@@ -124,7 +124,7 @@ st.set_page_config(page_title="보람한돈 무인 주문소 V6.4", layout="wide
 st.title("🐷 보람한돈 100% 무인 주문 접수처 (보안 금고 탑재)")
 
 password = st.sidebar.text_input("🔒 접속 비밀번호", type="password")
-if password != "boram1234!":
+if password != "9155":
     st.warning("사내 비밀번호를 입력해야 가동됩니다.")
     st.stop()
 st.sidebar.success("✅ 사내 보안 인증 완료! (API 키 비노출 보호 중)")
