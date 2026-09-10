@@ -37,16 +37,24 @@ def get_kakao_zipcode(address):
         return "[API오류]"
 
 def parse_smart_order_line(line):
-    """지능형 텍스트 분석기 (순번 제거 및 띄어쓰기 오류 교정)"""
+    """지능형 텍스트 분석기 (물결표 방어 및 전화번호 다림질 추가)"""
     line = line.strip()
     if not line: return None
     
-    phone_pattern = r'(01[016789][-.\s]*\d{3,4}[-.\s]*\d{4})'
+    # 💡 업그레이드: 물결(~), 언더바(_), 별(*) 등 모든 찌꺼기 기호 허용
+    phone_pattern = r'(01[016789][-.\s~_*]*\d{3,4}[-.\s~_*]*\d{4})'
     match = re.search(phone_pattern, line)
     
     if match:
         raw_phone = match.group(1)
-        phone = re.sub(r'\s+', '', raw_phone) 
+        # 💡 업그레이드: 고객이 어떻게 입력하든 010-XXXX-XXXX 형태로 예쁘게 다림질
+        clean_phone = re.sub(r'[^0-9]', '', raw_phone) 
+        if len(clean_phone) == 11:
+            phone = f"{clean_phone[:3]}-{clean_phone[3:7]}-{clean_phone[7:]}"
+        elif len(clean_phone) == 10:
+            phone = f"{clean_phone[:3]}-{clean_phone[3:6]}-{clean_phone[6:]}"
+        else:
+            phone = raw_phone
         
         name_part = line[:match.start()].strip()
         name = re.sub(r'^\d+[\s.]*', '', name_part) 
@@ -69,12 +77,12 @@ def parse_smart_order_line(line):
 # ==========================================
 # 🖥️ 3. 웹사이트 UI 화면 (택배사 다이렉트 업로드)
 # ==========================================
-st.set_page_config(page_title="보람한돈 무인 주문소 V6.0", layout="wide")
-st.title("🐷 보람한돈 100% 무인 주문 접수처 (택배사 직연동)")
+st.set_page_config(page_title="보람한돈 무인 주문소 V6.1", layout="wide")
+st.title("🐷 보람한돈 100% 무인 주문 접수처 (강력 방어 탑재)")
 
 st.subheader("📝 카톡/문자 내역 복사 & 붙여넣기")
-st.info("이름 010-1111-2222 주소 (상품명이 있다면 끝에 / 삼겹살 500g)")
-text_input = st.text_area("주문 내역 텍스트를 여기에 붙여넣으세요:", height=300)
+st.info("이름 010~1111~2222 주소 (상품명이 있다면 끝에 / 삼겹살 500g)")
+text_input = st.text_area("물결표(~)가 섞인 텍스트도 마음껏 붙여넣으세요:", height=300)
 
 if st.button("🚀 택배사 양식으로 자동 변환 시작!", use_container_width=True):
     if not text_input.strip():
@@ -131,7 +139,7 @@ if st.button("🚀 택배사 양식으로 자동 변환 시작!", use_container_
             
             final_df = pd.DataFrame(final_data)
             
-            st.success("🎉 완벽하게 택배사 양식으로 변환되었습니다! 파일을 그대로 업로드하세요.")
+            st.success("🎉 물결표(~) 완벽 방어! 엑셀로 다운로드하세요.")
             st.dataframe(final_df)
             
             # 엑셀 다운로드
