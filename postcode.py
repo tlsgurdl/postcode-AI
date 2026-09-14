@@ -8,7 +8,6 @@ from io import BytesIO
 # ==========================================
 # ⚙️ 1. 보안 금고 연동 (API 키 노출 원천 차단)
 # ==========================================
-# Streamlit Secrets 금고에서 안전하게 키를 호출합니다.
 try:
     KAKAO_REST_API_KEY = st.secrets["KAKAO_REST_API_KEY"]
 except Exception:
@@ -118,42 +117,43 @@ def parse_multi_line_orders(full_text):
     return parsed_data
 
 # ==========================================
-# 🖥️ 3. 웹사이트 UI 화면 (디자인 개선)
+# 🖥️ 3. 웹사이트 UI 화면 (초강력 CSS 적용)
 # ==========================================
 st.set_page_config(page_title="보람한돈 무인 주문소 V6.4", layout="wide")
 
-# 💡 [새로 추가된 CSS] 라이트/다크 모드 상관없이 텍스트 입력창이 잘 보이도록 스타일을 강제로 주입합니다.
+# 💡 [핵심 변경] Streamlit의 고유 태그인 data-testid를 직접 타겟팅하여 무조건 디자인이 적용되도록 강제합니다.
 st.markdown("""
 <style>
-    /* 입력창 기본 디자인 (테두리, 그림자, 둥근 모서리 적용) */
-    .stTextArea textarea {
-        border: 2px solid #4F81BD !important; /* 뚜렷한 파란색 테두리 */
+    /* 입력창 자체에 대한 강력한 스타일링 */
+    div[data-testid="stTextArea"] textarea {
+        border: 2px solid #4F81BD !important;
         border-radius: 8px !important;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
         font-size: 16px !important;
         padding: 15px !important;
-        transition: border 0.3s ease, box-shadow 0.3s ease;
+        transition: all 0.3s ease !important;
     }
     
-    /* 입력창을 마우스로 클릭했을 때 (포커스) 강조 효과 */
-    .stTextArea textarea:focus {
+    /* 클릭하여 텍스트를 입력할 때 테두리 색상 및 그림자 강조 */
+    div[data-testid="stTextArea"] textarea:focus {
         border: 2px solid #FF4B4B !important; 
-        box-shadow: 0 4px 10px rgba(255, 75, 75, 0.2) !important;
+        box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3) !important;
+        outline: none !important;
     }
 
-    /* 화면이 밝은 창 모드일 때: 배경을 살짝 옅은 회색으로 */
+    /* ☀️ 라이트 모드일 때: 입력창 배경을 눈에 띄는 밝은 파스텔톤 회색으로 */
     @media (prefers-color-scheme: light) {
-        .stTextArea textarea {
-            background-color: #F4F6F9 !important;
-            color: #222222 !important;
+        div[data-testid="stTextArea"] textarea {
+            background-color: #EBF0F6 !important;
+            color: #111111 !important;
         }
     }
     
-    /* 화면이 다크 모드일 때: 배경을 다른 UI보다 살짝 더 어두운 회색으로 */
+    /* 🌙 다크 모드일 때: 입력창 배경을 주변부보다 확실히 대비되는 진한 회색으로 */
     @media (prefers-color-scheme: dark) {
-        .stTextArea textarea {
-            background-color: #1E1E24 !important;
-            color: #FAFAFA !important;
+        div[data-testid="stTextArea"] textarea {
+            background-color: #2D2D36 !important;
+            color: #FFFFFF !important;
         }
     }
 </style>
