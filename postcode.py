@@ -192,7 +192,7 @@ if st.button("🚀 택배사 양식으로 자동 변환 시작!", use_container_
             st.download_button(
                 label="📊 [CJ/롯데/로젠 등] 택배시스템 다이렉트 업로드용 파일 다운로드",
                 data=processed_data,
-                file_name="보람한돈_택배발송용_최종.xlsx",
+                file_name="택배시스템_사무실_이름.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
