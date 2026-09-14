@@ -121,10 +121,10 @@ def parse_multi_line_orders(full_text):
 # ==========================================
 st.set_page_config(page_title="보람한돈 무인 주문소 V6.4", layout="wide")
 
-# 💡 [핵심 변경] Streamlit의 고유 태그인 data-testid를 직접 타겟팅하여 무조건 디자인이 적용되도록 강제합니다.
+# 💡 [핵심 변경] 여러 줄 입력창(stTextArea)과 한 줄 입력창(stTextInput - 비밀번호 포함) 모두에 디자인 적용
 st.markdown("""
 <style>
-    /* 입력창 자체에 대한 강력한 스타일링 */
+    /* 1. 메인 텍스트 입력창 (주문 내역 복붙 공간) 스타일 */
     div[data-testid="stTextArea"] textarea {
         border: 2px solid #4F81BD !important;
         border-radius: 8px !important;
@@ -133,25 +133,40 @@ st.markdown("""
         padding: 15px !important;
         transition: all 0.3s ease !important;
     }
-    
-    /* 클릭하여 텍스트를 입력할 때 테두리 색상 및 그림자 강조 */
     div[data-testid="stTextArea"] textarea:focus {
         border: 2px solid #FF4B4B !important; 
         box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3) !important;
         outline: none !important;
     }
 
-    /* ☀️ 라이트 모드일 때: 입력창 배경을 눈에 띄는 밝은 파스텔톤 회색으로 */
+    /* 2. 한 줄 텍스트 입력창 (사이드바 비밀번호 창 등) 스타일 추가! */
+    div[data-testid="stTextInput"] input {
+        border: 2px solid #4F81BD !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+        font-size: 16px !important;
+        padding: 10px 15px !important;
+        transition: all 0.3s ease !important;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border: 2px solid #FF4B4B !important; 
+        box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3) !important;
+        outline: none !important;
+    }
+
+    /* ☀️ 라이트 모드: 두 입력창 모두 확실히 눈에 띄는 파스텔톤 회색 배경 */
     @media (prefers-color-scheme: light) {
-        div[data-testid="stTextArea"] textarea {
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stTextInput"] input {
             background-color: #EBF0F6 !important;
             color: #111111 !important;
         }
     }
     
-    /* 🌙 다크 모드일 때: 입력창 배경을 주변부보다 확실히 대비되는 진한 회색으로 */
+    /* 🌙 다크 모드: 두 입력창 모두 주변부 대비 선명한 진한 회색 배경 */
     @media (prefers-color-scheme: dark) {
-        div[data-testid="stTextArea"] textarea {
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stTextInput"] input {
             background-color: #2D2D36 !important;
             color: #FFFFFF !important;
         }
