@@ -118,9 +118,47 @@ def parse_multi_line_orders(full_text):
     return parsed_data
 
 # ==========================================
-# 🖥️ 3. 웹사이트 UI 화면
+# 🖥️ 3. 웹사이트 UI 화면 (디자인 개선)
 # ==========================================
 st.set_page_config(page_title="보람한돈 무인 주문소 V6.4", layout="wide")
+
+# 💡 [새로 추가된 CSS] 라이트/다크 모드 상관없이 텍스트 입력창이 잘 보이도록 스타일을 강제로 주입합니다.
+st.markdown("""
+<style>
+    /* 입력창 기본 디자인 (테두리, 그림자, 둥근 모서리 적용) */
+    .stTextArea textarea {
+        border: 2px solid #4F81BD !important; /* 뚜렷한 파란색 테두리 */
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        font-size: 16px !important;
+        padding: 15px !important;
+        transition: border 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    /* 입력창을 마우스로 클릭했을 때 (포커스) 강조 효과 */
+    .stTextArea textarea:focus {
+        border: 2px solid #FF4B4B !important; 
+        box-shadow: 0 4px 10px rgba(255, 75, 75, 0.2) !important;
+    }
+
+    /* 화면이 밝은 창 모드일 때: 배경을 살짝 옅은 회색으로 */
+    @media (prefers-color-scheme: light) {
+        .stTextArea textarea {
+            background-color: #F4F6F9 !important;
+            color: #222222 !important;
+        }
+    }
+    
+    /* 화면이 다크 모드일 때: 배경을 다른 UI보다 살짝 더 어두운 회색으로 */
+    @media (prefers-color-scheme: dark) {
+        .stTextArea textarea {
+            background-color: #1E1E24 !important;
+            color: #FAFAFA !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🐷 보람한돈 100% 무인 주문 접수처 (보안 금고 탑재)")
 
 password = st.sidebar.text_input("🔒 접속 비밀번호", type="password")
